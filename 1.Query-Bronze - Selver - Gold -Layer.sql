@@ -163,6 +163,7 @@ CREATE TABLE silver.account_mapping (
 );
 
 ---2.2 Transformation et Nettoyage
+
 SELECT * FROM silver.fact_gl_transaction
 SELECT * FROM silver.account_mapping
 ----Script pour les transactions :
@@ -179,22 +180,30 @@ FROM bronze.gl_transaction
 WHERE transaction_id IS NOT NULL; -- On ignore les lignes vides
 
 -- Remplissage des Comptes
-INSERT INTO silver.dim_account
-SELECT CAST(account_number AS INT), TRIM(account_name), TRIM(account_type), TRIM(currency)
-FROM bronze.account;
+
+INSERT INTO silver.dim_account (account_number, account_name, account_type, currency)
+SELECT 
+    CAST(account_number AS INT), 
+    MAX(TRIM(account_name)), -- On prend un des noms si doublon
+    MAX(TRIM(account_type)), 
+    MAX(TRIM(currency))
+FROM bronze.account
+GROUP BY CAST(account_number AS INT);
+
 
 ---Script pour le mapping (Standardisation "P L" -> "P&L") :
-INSERT INTO silver.account_mapping
+
+TRUNCATE TABLE silver.account_mapping;
+
+INSERT INTO silver.account_mapping (account_number, pl_line, statement_type, sort_order)
 SELECT 
     CAST(AccountNumber AS INT),
-    TRIM(PLLine),
-    CASE 
-        WHEN StatementType = 'P L' THEN 'P&L' -- Correction de l'incohérence
-        ELSE TRIM(StatementType)
-    END,
-    CAST(CAST(SortOrder AS DECIMAL(18,2)) AS INT) 
+    MAX(TRIM(PLLine)),
+    MAX(CASE WHEN StatementType = 'P L' THEN 'P&L' ELSE TRIM(StatementType) END),
+    MAX(CAST(CAST(SortOrder AS DECIMAL(18,2)) AS INT))
 FROM bronze.account_mapping
-WHERE AccountNumber IS NOT NULL;
+WHERE AccountNumber IS NOT NULL
+GROUP BY CAST(AccountNumber AS INT); 
 
 -- Remplissage des Magasins (Fusion)
 INSERT INTO silver.dim_store
@@ -287,6 +296,12 @@ select * from gold.fact_gl_transaction;
 select * from gold.dim_account;
 select * from gold.dim_store;
 
+-------------------pour vider les tables silver------------------
+
+--TRUNCATE TABLE silver.fact_gl_transaction;
+--TRUNCATE TABLE silver.dim_account;
+--TRUNCATE TABLE silver.account_mapping;
+--TRUNCATE TABLE silver.dim_store;
 
 
 
