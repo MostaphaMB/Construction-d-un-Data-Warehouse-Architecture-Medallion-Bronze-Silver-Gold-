@@ -14,17 +14,11 @@ CREATE SCHEMA gold;
 GO
 
 --
-C'est parfait ! Merci d'avoir partagé les fichiers. Maintenant que j'ai pu analyser la structure réelle de tes fichiers CSV, nous allons redémarrer proprement avec les bons noms de colonnes.
 
-En tant que ton professeur, je vais te guider à nouveau sur l'étape 1, mais cette fois, les requêtes SQL sont parfaitement adaptées à tes données.
+--Étape 1 : Bronze Layer (Ingestion)
 
-Étape 1 : Bronze Layer (Ingestion)
-Comme nous l'avons dit, la couche Bronze est une copie "miroir" de tes fichiers. On ne change rien, on utilise des types de données flexibles (NVARCHAR) pour éviter que l'importation ne plante à cause d'une virgule ou d'un format de date bizarre.
+--1.1 Création de la Base et des Schémas
 
-1.1 Création de la Base et des Schémas
-On commence par préparer la structure globale.
-
-SQL
 -- 1. Création de la base de données
 CREATE DATABASE DataWarehouse;
 GO
